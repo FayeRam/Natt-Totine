@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+{% block title %}Connexion{% endblock %}
+{% block content %}
+<div class="card narrow">
+  <h1>Connexion</h1>
+  <form method="post">
+    {% csrf_token %}
+    {% include "partials/form.html" %}
+    <input type="hidden" name="next" value="{{ next }}">
+    <button type="submit" class="btn">Se connecter</button>
+  </form>
+  <p class="muted">Pas encore de compte ? <a href="{% url 'signup' %}{% if next %}?next={{ next|urlencode }}{% endif %}">Créer un compte</a></p>
+</div>
+{% endblock %}

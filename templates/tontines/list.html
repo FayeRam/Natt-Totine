@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% load humanize %}
+{% block title %}Mes tontines{% endblock %}
+{% block content %}
+<div class="head">
+  <h1>Mes tontines</h1>
+  <a class="btn" href="{% url 'tontines:create' %}">+ Nouvelle tontine</a>
+</div>
+{% for t in tontines %}
+  <a class="card row" href="{% url 'tontines:detail' t.pk %}">
+    <div>
+      <strong>{{ t.nom }}</strong>
+      <div class="muted">{{ t.montant|intcomma }} FCFA · {{ t.get_frequence_display|lower }} · {{ t.membres.count }}/{{ t.nombre_places }} membres</div>
+    </div>
+    {% if t.lancee %}<span class="pill ok">En cours</span>{% else %}<span class="pill wait">En attente</span>{% endif %}
+  </a>
+{% empty %}
+  <div class="card empty">
+    <p>Tu n'as encore aucune tontine.</p>
+    <p class="muted">Crée-en une, ou ouvre le lien d'invitation qu'un responsable t'a envoyé.</p>
+  </div>
+{% endfor %}
+{% endblock %}

@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+{% block title %}Supprimer {{ tontine.nom }}{% endblock %}
+{% block content %}
+<div class="card narrow danger-zone">
+  <h1>Supprimer « {{ tontine.nom }} » ?</h1>
+  <p>Les {{ tontine.membres.count }} membre{{ tontine.membres.count|pluralize }} inscrit{{ tontine.membres.count|pluralize }} perdront l'accès et le lien d'invitation ne marchera plus. Cette action est définitive.</p>
+  <form method="post" class="actions">
+    {% csrf_token %}
+    <button type="submit" class="btn btn-danger">Oui, supprimer</button>
+    <a class="btn ghost" href="{% url 'tontines:detail' tontine.pk %}">Annuler</a>
+  </form>
+</div>
+{% endblock %}

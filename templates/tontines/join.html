@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% load humanize %}
+{% block title %}Rejoindre {{ tontine.nom }}{% endblock %}
+{% block content %}
+<div class="card narrow">
+  <p class="muted">Invitation</p>
+  <h1>{{ tontine.nom }}</h1>
+  <p>{{ tontine.montant|intcomma }} FCFA {{ tontine.get_frequence_display|lower }}, {{ tontine.nombre_places }} membres. Responsable : {{ tontine.responsable.first_name|default:tontine.responsable.username }}.</p>
+  {% if invite %}
+    <p>Pour rejoindre, connecte-toi ou crée un compte.</p>
+    <div class="actions">
+      <a class="btn" href="{% url 'signup' %}?next={{ request.path|urlencode }}">Créer un compte</a>
+      <a class="btn ghost" href="{% url 'login' %}?next={{ request.path|urlencode }}">Se connecter</a>
+    </div>
+  {% elif tontine.lancee %}
+    <p class="err">Cette tontine a déjà commencé.</p>
+  {% elif tontine.est_complete %}
+    <p class="err">Cette tontine est complète.</p>
+  {% else %}
+    <form method="post">
+      {% csrf_token %}
+      <button type="submit" class="btn">Rejoindre la tontine</button>
+    </form>
+  {% endif %}
+</div>
+{% endblock %}

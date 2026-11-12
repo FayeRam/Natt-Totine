@@ -1,0 +1,36 @@
+{% load static %}<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#14213D">
+  <title>{% block title %}{{ APP_NAME }}{% endblock %} · {{ APP_NAME }}</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=Atkinson+Hyperlegible:wght@400;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{% static 'style.css' %}">
+</head>
+<body>
+  <header class="top">
+    <div class="top-in">
+      <a class="brand" href="{% url 'tontines:list' %}">
+        <span class="brand-mark" aria-hidden="true"></span>
+        <span>{{ APP_NAME }}<small>{{ APP_SLOGAN }}</small></span>
+      </a>
+      {% if user.is_authenticated %}
+        <form method="post" action="{% url 'logout' %}" class="inline">
+          {% csrf_token %}
+          <span class="who">{{ user.first_name|default:user.username }}</span>
+          <button type="submit" class="link">Se déconnecter</button>
+        </form>
+      {% endif %}
+    </div>
+  </header>
+  <main class="wrap">
+    {% for message in messages %}
+      <div class="msg msg-{{ message.tags }}" role="status">{{ message }}</div>
+    {% endfor %}
+    {% block content %}{% endblock %}
+  </main>
+</body>
+</html>

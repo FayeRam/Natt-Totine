@@ -1,0 +1,218 @@
+{% extends "base.html" %}
+{% load humanize %}
+{% block title %}{{ tontine.nom }}{% endblock %}
+{% block content %}
+<p class="crumb"><a href="{% url 'tontines:list' %}">← Mes tontines</a></p>
+
+<header class="t-head">
+  <div>
+    <h1>{{ tontine.nom }}</h1>
+    <p class="muted">{{ tontine.montant|intcomma }} FCFA {{ tontine.get_frequence_display|lower }} · {{ tontine.membres.count }}/{{ tontine.nombre_places }} membres</p>
+  </div>
+  <div class="pot">
+    <span class="pot-label">Cagnotte par tour</span>
+    <span class="pot-value">{{ tontine.cagnotte|intcomma }}<small> FCFA</small></span>
+  </div>
+</header>
+
+<nav class="tabs" role="tablist" aria-label="Sections de la tontine">
+  {% if tontine.lancee %}
+    <button role="tab" data-tab="encours">Tour en cours</button>
+    <button role="tab" data-tab="calendrier">Calendrier</button>
+    <button role="tab" data-tab="membres">Membres</button>
+    <button role="tab" data-tab="suivi">Suivi WhatsApp</button>
+  {% else %}
+    <button role="tab" data-tab="invitations">Invitations</button>
+    <button role="tab" data-tab="membres">Membres</button>
+    {% if est_responsable %}<button role="tab" data-tab="reglages">Réglages</button>{% endif %}
+  {% endif %}
+</nav>
+
+{% if not tontine.lancee %}
+  {# ============ AVANT LE LANCEMENT ============ #}
+  <section class="panel" data-panel="invitations" role="tabpanel">
+    <div class="card">
+      <h2>Réunir les membres</h2>
+      <div class="seats" aria-label="{{ tontine.membres.count }} places prises sur {{ tontine.nombre_places }}">
+        {% for m in tontine.membres.all %}<span class="seat taken" title="{{ m.nom_affiche }}">{{ m.nom_affiche|slice:":1"|upper }}</span>{% endfor %}
+        {% for vide in ""|center:places_restantes %}<span class="seat"></span>{% endfor %}
+      </div>
+      <p>{% if places_restantes %}Encore <strong>{{ places_restantes }} place{{ places_restantes|pluralize }}</strong> à pourvoir.{% else %}<strong>C'est complet !</strong> Le responsable peut lancer la tontine.{% endif %}</p>
+      <div class="invite">
+        <input id="lien" type="text" readonly value="{{ lien_invitation }}" aria-label="Lien d'invitation">
+        <button type="button" class="btn ghost" data-copy="lien">Copier le lien</button>
+        <a class="btn btn-wa" href="{{ whatsapp_invitation }}" target="_blank" rel="noopener">Inviter sur WhatsApp</a>
+      </div>
+    </div>
+
+    {% if est_responsable %}
+      <form method="post" action="{% url 'tontines:start' tontine.pk %}" class="card start">
+        {% csrf_token %}
+        <h2>Lancer la tontine</h2>
+        <fieldset>
+          <legend>Ordre de passage</legend>
+          <label><input type="radio" name="ordre" value="tirage" checked> Tirage au sort</label>
+          <label><input type="radio" name="ordre" value="arrivee"> Ordre d'inscription</label>
+        </fieldset>
+        <button type="submit" class="btn">Lancer avec {{ tontine.membres.count }} membre{{ tontine.membres.count|pluralize }}</button>
+        <small class="muted">Une fois lancée, plus personne ne peut rejoindre et l'ordre est définitif.</small>
+      </form>
+    {% else %}
+      <p class="muted">Le responsable lancera la tontine quand tout le monde sera inscrit.</p>
+    {% endif %}
+  </section>
+
+  {% if est_responsable %}
+  <section class="panel" data-panel="reglages" role="tabpanel">
+    <div class="card danger-zone">
+      <h2>Supprimer la tontine</h2>
+      <p>Possible tant que la tontine n'est pas lancée. Les membres inscrits perdront l'accès.</p>
+      <a class="btn btn-danger" href="{% url 'tontines:delete' tontine.pk %}">Supprimer « {{ tontine.nom }} »</a>
+    </div>
+  </section>
+  {% endif %}
+
+{% else %}
+  {# ============ TONTINE LANCÉE ============ #}
+  <section class="panel" data-panel="encours" role="tabpanel">
+    {% if tour_actuel %}
+      <div class="card hero {% if tour_actuel.en_retard %}late{% endif %}">
+        <div class="hero-top">
+          <span class="avatar big">{{ tour_actuel.beneficiaire.nom_affiche|slice:":1"|upper }}</span>
+          <div>
+            <p class="muted">Tour {{ tour_actuel.numero }} sur {{ tours|length }} · échéance le {{ tour_actuel.echeance|date:"j F Y" }}</p>
+            <h2>{% if tour_actuel.beneficiaire == moi %}C'est ton tour de recevoir !{% else %}{{ tour_actuel.beneficiaire.nom_affiche }} reçoit la cagnotte{% endif %}</h2>
+          </div>
+        </div>
+        <div class="progress"><i style="width: {% widthratio tour_actuel.nb_payes tour_actuel.paiements.all|length 100 %}%"></i></div>
+        <p><strong>{{ tour_actuel.nb_payes }}/{{ tour_actuel.paiements.all|length }}</strong> cotisations reçues{% if tour_actuel.en_retard %} · <span class="tag late">en retard</span>{% endif %}</p>
+      </div>
+      <div class="card">
+        <h2>Cotisations du tour {{ tour_actuel.numero }}</h2>
+        <ul class="payments">
+          {% for p in tour_actuel.paiements.all %}
+            <li>
+              <span class="who-row"><span class="avatar">{{ p.membre.nom_affiche|slice:":1"|upper }}</span>{{ p.membre.nom_affiche }}{% if p.membre == moi %} <span class="muted">(toi)</span>{% endif %}</span>
+              {% if est_responsable %}
+                <form method="post" action="{% url 'tontines:toggle_payment' p.pk %}">
+                  {% csrf_token %}<input type="hidden" name="retour" value="encours">
+                  <button type="submit" class="pay {% if p.paye %}is-paid{% endif %}">{% if p.paye %}✓ Payé{% else %}Marquer payé{% endif %}</button>
+                </form>
+              {% else %}
+                <span class="tag {% if p.paye %}ok{% else %}wait{% endif %}">{% if p.paye %}Payé{% else %}En attente{% endif %}</span>
+              {% endif %}
+            </li>
+          {% endfor %}
+        </ul>
+      </div>
+    {% else %}
+      <div class="card hero done">
+        <h2>Tontine terminée 🎉</h2>
+        <p>Les {{ tours|length }} tours sont complets. Chaque membre a reçu sa cagnotte.</p>
+      </div>
+    {% endif %}
+  </section>
+
+  <section class="panel" data-panel="calendrier" role="tabpanel">
+    <p class="muted">{{ tours_termines }} tour{{ tours_termines|pluralize }} terminé{{ tours_termines|pluralize }} sur {{ tours|length }}</p>
+    <ol class="timeline">
+      {% for tour in tours %}
+        <li id="tour-{{ tour.numero }}" class="{% if tour.est_complet %}is-done{% elif tour == tour_actuel %}is-now{% elif tour.en_retard %}is-late{% endif %}">
+          <details {% if tour == tour_actuel %}open{% endif %}>
+            <summary>
+              <span class="tl-date">{{ tour.echeance|date:"j M" }}<small>{{ tour.echeance|date:"Y" }}</small></span>
+              <span class="tl-who"><strong>Tour {{ tour.numero }}</strong> · {{ tour.beneficiaire.nom_affiche }}</span>
+              {% if tour.est_complet %}<span class="tag ok">Complet</span>
+              {% elif tour.en_retard %}<span class="tag late">En retard</span>
+              {% else %}<span class="tag wait">{{ tour.nb_payes }}/{{ tour.paiements.all|length }}</span>{% endif %}
+            </summary>
+            <ul class="payments">
+              {% for p in tour.paiements.all %}
+                <li>
+                  <span>{{ p.membre.nom_affiche }}</span>
+                  {% if est_responsable %}
+                    <form method="post" action="{% url 'tontines:toggle_payment' p.pk %}">
+                      {% csrf_token %}
+                      <button type="submit" class="pay {% if p.paye %}is-paid{% endif %}">{% if p.paye %}✓ Payé{% else %}Marquer payé{% endif %}</button>
+                    </form>
+                  {% else %}
+                    <span class="tag {% if p.paye %}ok{% else %}wait{% endif %}">{% if p.paye %}Payé{% else %}En attente{% endif %}</span>
+                  {% endif %}
+                </li>
+              {% endfor %}
+            </ul>
+          </details>
+        </li>
+      {% endfor %}
+    </ol>
+  </section>
+
+  <section class="panel" data-panel="suivi" role="tabpanel">
+    <div class="card">
+      <h2>Message de suivi pour le groupe</h2>
+      <p class="muted">À envoyer dans votre groupe WhatsApp : qui a payé, qui est en attente, et le prochain tour.</p>
+      <pre class="wa-preview" id="texteSuivi">{{ texte_suivi }}</pre>
+      <div class="actions">
+        <a class="btn btn-wa" href="{{ whatsapp_suivi }}" target="_blank" rel="noopener">Envoyer sur WhatsApp</a>
+        <button type="button" class="btn ghost" data-copy="texteSuivi">Copier le message</button>
+      </div>
+    </div>
+  </section>
+{% endif %}
+
+{# ============ MEMBRES (les deux phases) ============ #}
+<section class="panel" data-panel="membres" role="tabpanel">
+  <div class="card">
+    <ul class="member-list">
+      {% for s in stats %}
+        <li>
+          <span class="avatar">{{ s.membre.nom_affiche|slice:":1"|upper }}</span>
+          <div class="m-main">
+            <strong>{{ s.membre.nom_affiche }}</strong>{% if s.membre.utilisateur_id == tontine.responsable_id %} <span class="tag">responsable</span>{% endif %}
+            {% if tontine.lancee %}
+              <div class="muted small">Passe au tour {{ s.membre.position }}{% if s.tour_recu %}, le {{ s.tour_recu.echeance|date:"j M Y" }}{% endif %} · {{ s.payes }}/{{ tours|length }} cotisations payées</div>
+            {% else %}
+              <div class="muted small">Inscrit le {{ s.membre.rejoint_le|date:"j M Y" }}</div>
+            {% endif %}
+          </div>
+          {% if tontine.lancee %}
+            {% if s.retards %}<span class="tag late">{{ s.retards }} retard{{ s.retards|pluralize }}</span>{% else %}<span class="tag ok">À jour</span>{% endif %}
+          {% endif %}
+        </li>
+      {% endfor %}
+    </ul>
+  </div>
+</section>
+
+<script>
+(function () {
+  const tabs = [...document.querySelectorAll("[data-tab]")];
+  const panels = [...document.querySelectorAll("[data-panel]")];
+  function show(name) {
+    if (!tabs.some(t => t.dataset.tab === name)) name = tabs[0].dataset.tab;
+    tabs.forEach(t => t.setAttribute("aria-selected", t.dataset.tab === name));
+    panels.forEach(p => p.hidden = p.dataset.panel !== name);
+  }
+  function fromHash() {
+    const h = location.hash.slice(1);
+    if (h.startsWith("tour-")) {
+      show("calendrier");
+      const el = document.getElementById(h);
+      if (el) { el.querySelector("details").open = true; el.scrollIntoView({block: "center"}); }
+    } else show(h);
+  }
+  tabs.forEach(t => t.addEventListener("click", () => { history.replaceState(null, "", "#" + t.dataset.tab); show(t.dataset.tab); }));
+  window.addEventListener("hashchange", fromHash);
+  fromHash();
+
+  document.querySelectorAll("[data-copy]").forEach(btn => btn.addEventListener("click", async () => {
+    const el = document.getElementById(btn.dataset.copy);
+    const texte = el.value !== undefined ? el.value : el.textContent;
+    const label = btn.textContent;
+    try { await navigator.clipboard.writeText(texte); btn.textContent = "Copié ✓"; }
+    catch (e) { btn.textContent = "Sélectionne et copie"; }
+    setTimeout(() => btn.textContent = label, 2000);
+  }));
+})();
+</script>
+{% endblock %}

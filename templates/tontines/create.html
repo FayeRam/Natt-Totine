@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+{% block title %}Nouvelle tontine{% endblock %}
+{% block content %}
+<div class="card narrow">
+  <h1>Nouvelle tontine</h1>
+  <form method="post">
+    {% csrf_token %}
+    {% include "partials/form.html" %}
+    <button type="submit" class="btn">Créer la tontine</button>
+  </form>
+</div>
+{% endblock %}
