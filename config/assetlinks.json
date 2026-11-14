@@ -1,0 +1,8 @@
+[{
+      "relation": ["delegate_permission/common.handle_all_urls"],
+      "target": {
+        "namespace": "android_app",
+        "package_name": "com.ramayafe.natt",
+        "sha256_cert_fingerprints": ["66:B6:09:DC:D0:52:09:89:01:4A:B4:9C:A5:02:E1:87:DB:46:D1:2E:00:40:BD:B5:49:DE:76:11:A7:1A:C8:39"]
+      }
+    }]
