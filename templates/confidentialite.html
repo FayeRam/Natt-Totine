@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+{% block title %}Politique de confidentialité{% endblock %}
+{% block content %}
+<div class="card prose">
+  <h1>Politique de confidentialité</h1>
+  <p class="muted">Dernière mise à jour : 14 novembre 2026</p>
+
+  <p>{{ APP_NAME }} est une application qui aide un groupe de personnes à suivre une tontine :
+  qui fait partie du groupe, l'ordre de passage et les cotisations payées.
+  Cette page explique quelles données nous gardons et pourquoi.</p>
+
+  <h2>Les données que nous gardons</h2>
+  <ul>
+    <li><strong>Ton compte</strong> : ton nom d'utilisateur, le nom que tu affiches et ton mot de passe (chiffré, personne ne peut le lire).</li>
+    <li><strong>Tes tontines</strong> : leur nom, le montant, la fréquence, les membres, l'ordre de passage et les paiements marqués par le responsable.</li>
+  </ul>
+  <p>{{ APP_NAME }} ne fait <strong>aucun paiement</strong> : l'argent circule entre les membres comme d'habitude.
+  Nous ne demandons ni numéro de carte, ni compte bancaire, ni compte Wave ou Orange Money,
+  ni ta position, ni tes contacts.</p>
+
+  <h2>À quoi elles servent</h2>
+  <p>Uniquement à faire fonctionner l'application : te connecter et montrer aux membres d'une même tontine
+  les informations de cette tontine. Les autres membres de ta tontine voient ton nom affiché et tes paiements
+  dans cette tontine, et rien d'autre.</p>
+  <p>Nous ne vendons pas tes données, nous ne les partageons avec aucune entreprise et il n'y a pas de publicité.</p>
+
+  <h2>Où elles sont stockées</h2>
+  <p>Sur les serveurs de notre hébergeur, PythonAnywhere. La connexion entre ton téléphone et le serveur est chiffrée (HTTPS).</p>
+
+  <h2>Supprimer ton compte</h2>
+  <p>Tu peux supprimer ton compte à tout moment, depuis l'application : menu du bas, « Supprimer mon compte »,
+  ou à l'adresse <a href="{% url 'supprimer_compte' %}">{{ request.scheme }}://{{ request.get_host }}{% url 'supprimer_compte' %}</a>.</p>
+  <p>Ton nom et ton identifiant sont alors effacés et tu ne peux plus te connecter. Les tontines que tu gérais et qui n'ont
+  pas commencé sont supprimées. Dans les tontines déjà commencées, l'historique des paiements reste visible pour les autres membres,
+  mais il apparaît sous le nom « Membre supprimé ».</p>
+
+  <h2>Contact</h2>
+  {% if contact %}
+    <p>Pour toute question sur tes données : <strong>{{ contact }}</strong></p>
+  {% else %}
+    <p>Pour toute question sur tes données, contacte le responsable de l'application.</p>
+  {% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,10 @@
+{% extends "base.html" %}
+{% block title %}Pas de connexion{% endblock %}
+{% block content %}
+<div class="card narrow" style="text-align:center">
+  <h1>Pas de connexion</h1>
+  <p class="muted">{{ APP_NAME }} a besoin d'Internet pour afficher tes tontines à jour.
+  Vérifie ton Wi-Fi ou tes données mobiles, puis réessaie.</p>
+  <a class="btn" href="/">Réessayer</a>
+</div>
+{% endblock %}

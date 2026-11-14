@@ -9,6 +9,11 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=Atkinson+Hyperlegible:wght@400;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="{% static 'style.css' %}">
+  <link rel="manifest" href="{% url 'manifeste' %}">
+  <link rel="icon" type="image/png" href="{% static 'icons/favicon-48.png' %}">
+  <link rel="apple-touch-icon" href="{% static 'icons/apple-touch-icon.png' %}">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="{{ APP_NAME }}">
 </head>
 <body>
   <header class="top">
@@ -32,5 +37,14 @@
     {% endfor %}
     {% block content %}{% endblock %}
   </main>
+  <footer class="pied">
+    <a href="{% url 'confidentialite' %}">Confidentialité</a>
+    {% if user.is_authenticated %}<a href="{% url 'supprimer_compte' %}">Supprimer mon compte</a>{% endif %}
+  </footer>
+  <script>
+    if ("serviceWorker" in navigator) {
+      window.addEventListener("load", () => navigator.serviceWorker.register("{% url 'service_worker' %}"));
+    }
+  </script>
 </body>
 </html>

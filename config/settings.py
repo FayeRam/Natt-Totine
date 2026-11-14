@@ -81,6 +81,9 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 # Nom de l'application : change-le ici, il se met à jour partout.
 APP_NAME = "Natt"
 APP_SLOGAN = "la tontine en toute confiance"
+# Adresse de contact affichée dans la politique de confidentialité (exigée par Google Play).
+# À définir dans le fichier WSGI de PythonAnywhere : os.environ["NATT_CONTACT_EMAIL"] = "..."
+CONTACT_EMAIL = os.environ.get("NATT_CONTACT_EMAIL", "")
 
 LOGIN_URL = "login"
 LOGIN_REDIRECT_URL = "tontines:list"

@@ -89,3 +89,59 @@ class TontineTests(TestCase):
         self.client.login(username="inconnu", password="motdepasse-solide-1")
         r = self.client.get(reverse("tontines:detail", args=[self.tontine.pk]))
         self.assertEqual(r.status_code, 403)
+
+
+class ApplicationTests(TestCase):
+    """Fichiers et pages nécessaires pour le Play Store."""
+
+    def test_manifeste(self):
+        r = self.client.get("/manifest.webmanifest")
+        self.assertEqual(r.status_code, 200)
+        donnees = r.json()
+        self.assertEqual(donnees["display"], "standalone")
+        self.assertTrue(any(i["sizes"] == "512x512" for i in donnees["icons"]))
+
+    def test_service_worker(self):
+        r = self.client.get("/sw.js")
+        self.assertEqual(r.status_code, 200)
+        self.assertIn("javascript", r["Content-Type"])
+        self.assertContains(r, "hors-ligne")
+
+    def test_assetlinks_vide_par_defaut(self):
+        r = self.client.get("/.well-known/assetlinks.json")
+        self.assertEqual(r.status_code, 200)
+
+    def test_confidentialite_accessible_sans_compte(self):
+        r = self.client.get("/confidentialite/")
+        self.assertContains(r, "Supprimer ton compte")
+
+
+class SuppressionCompteTests(TestCase):
+    def setUp(self):
+        self.awa = User.objects.create_user("awa", password="motdepasse-solide-1", first_name="Awa")
+        self.moussa = User.objects.create_user("moussa", password="motdepasse-solide-1")
+        # tontine non lancée gérée par Awa : sera supprimée
+        self.brouillon = Tontine.objects.create(
+            nom="Brouillon", montant=5000, nombre_places=3,
+            date_debut=date.today() + timedelta(days=7), responsable=self.awa,
+        )
+        Membre.objects.create(tontine=self.brouillon, utilisateur=self.awa)
+        # tontine lancée de Moussa où Awa est membre : l'historique reste
+        self.en_cours = Tontine.objects.create(
+            nom="En cours", montant=5000, nombre_places=2,
+            date_debut=date.today() + timedelta(days=7), responsable=self.moussa,
+        )
+        Membre.objects.create(tontine=self.en_cours, utilisateur=self.moussa)
+        Membre.objects.create(tontine=self.en_cours, utilisateur=self.awa)
+        self.en_cours.lancer()
+
+    def test_suppression(self):
+        self.client.login(username="awa", password="motdepasse-solide-1")
+        self.assertEqual(self.client.get("/compte/supprimer/").status_code, 200)
+        self.client.post("/compte/supprimer/")
+        self.awa.refresh_from_db()
+        self.assertFalse(self.awa.is_active)
+        self.assertEqual(self.awa.first_name, "Membre supprimé")
+        self.assertFalse(Tontine.objects.filter(nom="Brouillon").exists())
+        self.assertEqual(Paiement.objects.filter(tour__tontine=self.en_cours).count(), 4)
+        self.assertFalse(self.client.login(username="awa", password="motdepasse-solide-1"))

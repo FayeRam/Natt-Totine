@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% block title %}Supprimer mon compte{% endblock %}
+{% block content %}
+<div class="card narrow danger-zone">
+  <h1>Supprimer mon compte ?</h1>
+  <p>Ton nom et ton identifiant seront effacés, et tu ne pourras plus te connecter. C'est définitif.</p>
+
+  {% if a_supprimer %}
+    <p><strong>Ces tontines que tu gères n'ont pas commencé : elles seront supprimées.</strong></p>
+    <ul>{% for t in a_supprimer %}<li>{{ t.nom }}</li>{% endfor %}</ul>
+  {% endif %}
+
+  {% if en_cours %}
+    <p><strong>Ces tontines ont déjà commencé :</strong> leur historique reste visible pour les autres membres,
+    sous le nom « Membre supprimé ».</p>
+    <ul>{% for t in en_cours %}<li>{{ t.nom }}</li>{% endfor %}</ul>
+  {% endif %}
+
+  <form method="post" class="actions">
+    {% csrf_token %}
+    <button type="submit" class="btn btn-danger">Oui, supprimer mon compte</button>
+    <a class="btn ghost" href="{% url 'tontines:list' %}">Annuler</a>
+  </form>
+</div>
+{% endblock %}
